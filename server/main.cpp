@@ -17,11 +17,12 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <signal.h>
+#include <numeric>
 #include "Kernel.h"
 
 #define PORT 8888
 #define BACKLOG 12
-#define BUF_SIZE 2048
+
 
 using namespace std;
 
@@ -178,7 +179,7 @@ void *start_routine(void *ptr)
         }
         else if(commands[0] == "exit"){
             Kernel::Instance().Sys_Exit();
-            continue;
+            return (void*)NULL;
         }
         else if(commands[0] == "touch"){
             if(commands.size() != 2){
@@ -276,8 +277,109 @@ void *start_routine(void *ptr)
                 sout << "Read successfully, readSize = " << readSize << endl;
                 sout << "Content: " << _buf << endl;
             }
+            else if(code == EACCES){
+                sout << "[Error] Permission denied" << endl;
+            }
             else{
                 sout <<"[Error] Unknown error" << endl;
+            }
+            msg.display(sout);
+        }
+        else if(commands[0] == "write"){
+            if(commands.size() < 3){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            if(!isNum(commands[1])){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            int fd = stoi(commands[1]), code;
+
+            //write fd 后面的内容都是要写入文件的内容
+            string content = std::accumulate(commands.begin() + 2, commands.end(), string(),
+            [](const string& acc, const string& str){
+                return acc + str + " ";
+            });
+            char _buf[BUF_SIZE];
+            strcpy(_buf, content.c_str());
+            int writeSize = Kernel::Instance().Sys_Write(fd, content.size(),  BUF_SIZE, _buf, code);
+            if(code == EBADF){
+                sout << "[Error] No such open file" << endl;
+            }
+            else if(code == NOERROR){
+                sout << "Write successfully, writeSize = " << writeSize << endl;
+                sout << "Content: " << content << endl;
+            }
+            else if(code == EACCES){
+                sout << "[Error] Permission denied" << endl;
+            }
+            else{
+                sout <<"[Error] Unknown error" << endl;
+            }
+            msg.display(sout);
+        }
+        else if(commands[0] == "seek"){
+            if(commands.size() != 4){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            if(!isNum(commands[1]) || !isNum(commands[2]) || !isNum(commands[3])){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            int fd = stoi(commands[1]);
+            off_t offset = stoi(commands[2]);
+            int whence = stoi(commands[3]);
+            int code;
+            int newPos = Kernel::Instance().Sys_Seek(fd, offset, whence, code); 
+            if(code == EBADF){
+                sout << "[Error] No such open file" << endl;
+            }
+            else if(code == NOERROR){
+                sout << "Seek successfully, nowOffset = " << newPos << endl;
+            }
+            else if(code == EACCES){
+                sout << "[Error] Permission denied" << endl;
+            }
+            else{
+                sout <<"[Error] Unknown error" << endl;
+            }
+            msg.display(sout);
+        }
+        else if(commands[0] == "close"){
+            if(commands.size() != 2){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            if(!isNum(commands[1])){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            int fd = stoi(commands[1]), code;
+            if(Kernel::Instance().Sys_Close(fd) == 0){
+                sout << "Close fd:" << fd << endl;
+            }
+            else{
+                sout << "[Error] No such open file" << endl;
+            }
+            msg.display(sout);
+        }
+        else if(commands[0] == "cat"){
+            if(commands.size() != 2){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            string fileName = commands[1];
+            if(Kernel::Instance().sys_Cat(fileName, sout) == -1){
+                sout << "[Error] Cat failed" << endl;
             }
             msg.display(sout);
         }

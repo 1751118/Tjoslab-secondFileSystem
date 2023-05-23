@@ -133,3 +133,81 @@ int Kernel::Sys_Open(const string fileName, int mode, int& code)
     code = u.u_error;
     return u.u_ar0[User::EAX];
 }
+
+int Kernel::Sys_Write(int fd, size_t size, size_t nmemb, void* ptr, int& code)
+{
+
+    if(size > nmemb) return -1;
+    User& u = Kernel::Instance().GetUser();
+
+    u.u_arg[0] = fd;
+    u.u_arg[1] = (unsigned long long)ptr;
+    u.u_arg[2] = size;
+
+    FileManager& fileMgr = Kernel::Instance().GetFileManager();
+    fileMgr.Write();
+
+    code = u.u_error;
+    return u.u_ar0[User::EAX];
+}
+
+int Kernel::Sys_Seek(int fd, off_t offset, int whence, int& code)
+{
+    User& u = Kernel::Instance().GetUser();
+
+    u.u_ar0[0] = 0;
+    u.u_ar0[1] = 0;
+
+    u.u_arg[0] = fd;
+    u.u_arg[1] = offset;
+    u.u_arg[2] = whence;
+
+    FileManager& fileMgr = Kernel::Instance().GetFileManager();
+    fileMgr.Seek();
+
+    code = u.u_error;
+    return u.u_ar0[User::EAX];
+}
+
+int Kernel::Sys_Close(int fd)
+{
+    User& u = Kernel::Instance().GetUser();
+
+    u.u_error = NOERROR;
+    u.u_arg[0] = fd;
+
+    FileManager& fileMgr = Kernel::Instance().GetFileManager();
+    fileMgr.Close();
+
+    return u.u_ar0[User::EAX];
+}
+
+int Kernel::sys_Cat(const string fileName, stringstream& sout)
+{
+    User& u = Kernel::Instance().GetUser();
+    u.u_error = NOERROR;
+
+    FileManager& fileMgr = Kernel::Instance().GetFileManager();
+
+    int code;
+
+    //读打开文件
+    int fd = Kernel::Instance().Sys_Open(fileName, File::FREAD, code);
+    if(code == -1){
+        return -1;
+    }
+
+    char buf[BUF_SIZE];
+
+    //读取文件内容
+    while(true){
+        memset(buf, 0, BUF_SIZE);
+        if(Kernel::Instance().Sys_Read(fd, BUF_SIZE, BUF_SIZE, buf, code) <= 0)
+            break;
+        sout << buf;
+    }
+    if(code != NOERROR) return -1;
+
+    //关闭文件
+    return Kernel::Instance().Sys_Close(fd);
+}

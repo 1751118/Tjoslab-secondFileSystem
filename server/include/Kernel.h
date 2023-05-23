@@ -19,6 +19,8 @@
 
 #define SYS_SEEK_END 2
 
+#define BUF_SIZE 2048
+
 typedef unsigned Fd;
 
 class Kernel
@@ -66,6 +68,10 @@ public:
     int Sys_Creat(const string fileName);
     int Sys_Remove(const string path);
     int Sys_Open(const string fileName, int mode, int& code);
+    int Sys_Write(int fd, size_t size, size_t nmemb, void* ptr, int& code);
+    int Sys_Seek(int fd, off_t offset, int whence, int& code);
+    int Sys_Close(int fd);
+    int sys_Cat(const string fileName, stringstream& sout);
 };
 
 class Message
