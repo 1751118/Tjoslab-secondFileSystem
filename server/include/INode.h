@@ -86,7 +86,7 @@ public:
 	void IUpdate(int time);
 
 	/* 
-	 * @comment 更新外存Inode的最后的访问时间、修改时间
+	 * @comment 获得外存Inode的最后的访问时间、修改时间
 	 */
 	int IGetAccessDatetime();
 	

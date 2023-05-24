@@ -74,7 +74,11 @@ void FileManager::Creat()
 		{
 			return;
 		}
-
+		
+		// //更新访问时间
+		// time_t curTime = time(nullptr);
+		// pInode -> IUpdate(curTime);
+		
 		/* 
 		 * 如果所希望的名字不存在，使用参数trf = 2来调用open1()。
 		 * 不需要进行权限检查，因为刚刚建立的文件的权限和传入参数mode
@@ -338,7 +342,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 	if ( '\0' == curchar && mode != FileManager::OPEN )
 	{
 		u.u_error =  ENOENT;
-		cout <<"out1" << endl;
 		goto out;
 	}
 
@@ -355,7 +358,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		/* 整个路径搜索完毕，返回相应Inode指针。目录搜索成功返回。 */
 		if ( '\0' == curchar )
 		{
-			cout <<"out2" << endl;
 			return pInode;
 		}
 
@@ -450,7 +452,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 				
 				/* 目录项搜索完毕而没有找到匹配项，释放相关Inode资源，并推出 */
 				u.u_error =  ENOENT;
-				cout <<"out5" << endl;
 				goto out;
 			}
 
@@ -524,7 +525,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 				u.u_error =  EACCES;
 				break;	/* goto out; */
 			}
-			cout <<"out3" << endl;
 			return pInode;
 		}
 
@@ -543,7 +543,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		}
 	}
 out:
-	cout <<"out" << endl;
 	this->m_InodeTable->IPut(pInode);
 	return NULL;
 }
@@ -581,6 +580,11 @@ Inode* FileManager::MakNode( unsigned int mode )
 	pInode->i_nlink = 1;
 	pInode->i_uid = u.u_uid;
 	pInode->i_gid = u.u_gid;
+
+	//更新访问时间为当前时间
+	time_t curTime = time(nullptr);
+	pInode -> IUpdate(curTime);
+
 	/* 将目录项写入u.u_dent，随后写入目录文件 */
 	this->WriteDir(pInode);
 	return pInode;
@@ -798,7 +802,6 @@ void FileManager::MkNod()
 		/* 要创建的文件已经存在,这里并不能去覆盖此文件 */
 		if ( pInode != NULL )
 		{
-			cout<<"pInode,Exist!" << endl;
 			u.u_error =  EEXIST;
 			this->m_InodeTable->IPut(pInode);
 			return;

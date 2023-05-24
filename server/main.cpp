@@ -2,16 +2,12 @@
 #include <string>
 #include <string.h>
 #include <sstream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>      
+#include <stdlib.h>  
 #include <strings.h>      
 #include <vector>
 #include <algorithm>
-#include <sys/types.h> 
+#include <iomanip>
 #include <sys/socket.h> 
 #include <netinet/in.h> 
 #include <arpa/inet.h>
@@ -37,29 +33,54 @@ bool isNum(const string str){
     }
     return true;
 }
+string getLocalTime(time_t currentTimeMillis){
+
+    // 转换为本地时间
+    std::tm* localTime = std::localtime(&currentTimeMillis);
+
+    // 获取年月日时分秒
+    string s;
+    int year = localTime->tm_year + 1900;  // 年份是从1900年开始计算的
+    int month = localTime->tm_mon + 1;     // 月份是从0开始计算的，需要加1
+    int day = localTime->tm_mday;
+    int hour = localTime->tm_hour + 8;     // ?这里为什么少了8个小时
+    int minute = localTime->tm_min;
+    int second = localTime->tm_sec;
+
+    // 输出结果
+    s = to_string(year) + "/" + to_string(month) + "/" + to_string(day) + " " 
+       +to_string(hour) + ":" + to_string(minute) + ":" + to_string(second);
+    return s;
+}
 stringstream homepage(const string username)
 {
     stringstream ss;
     ss << "------------------------------------------------" << endl;
-	ss << "               SecondFileSystem v1.0.1          " << endl;
+	ss << "               SecondFileSystem v1.0.2          " << endl;
 	ss << "                  1751118 Dapeng Wu             " << endl;
 	ss << "------------------------------------------------" << endl;
     ss << "Please input the '--help' for command help!" << endl;
 	ss << endl;
-    FileManager& fileMgr = Kernel::Instance().GetFileManager();
-    char disPath[100];
-    strcpy(disPath, ((string)"root@" + (fileMgr.GetCurDir() + 1)).c_str());
-    ss << strcat(disPath, ":/# ");
     return ss;
 }
 stringstream help()
 {
     stringstream ss;
     ss << "我的文件系统提供以下命令：\n";
-    ss << "ls               -----------查看当前目录下的文件或目录\n";
-    ss << "mkdir dirname    -----------在当前目录下创建名为dirname的目录\n";
-    ss << "cd dirname       -----------切换到当前文件夹下的dirname目录\n";
+    ss << "ls                           -----------查看当前目录下的文件或目录\n";
+    ss << "mkdir [dirname]              -----------创建名为dirname的目录\n";
+    ss << "cd [dirname]                 -----------切换到dirname目录\n";
+    ss << "rm [name]                    -----------删除名为name的文件夹或文件\n";
+    ss << "open [filename] [mode]       -----------打开filename文件, mode = 1, 读打开, mode = 2, 写打开\n";
+    ss << "write [fd] [content]         -----------将内容写入写打开文件fd\n";
+    ss << "read [fd] [size]             -----------读取读打开文件fd的size字节\n";
+    ss << "seek [fd] [offset] [whence]  -----------调整打开文件fd的指针位置, offset为偏移量, whence为基点\n";
+    ss << "close [fd]                   -----------关闭打开文件fd\n";
+    ss << "touch [filename]             -----------创建名为filename的文件\n"; 
+    ss << "fin [inName] [outName]       -----------将系统外部的outName文件读入到系统内部的inName文件中\n";
+    ss << "fout [inName] [outName]      -----------将系统内部的inName文件读出到系统外部的outName文件中\n"; 
     ss << "\n";
+    ss << "[注] 以上操作均针对当前目录\n";
     return ss;
 }
 
@@ -89,7 +110,7 @@ void *start_routine(void *ptr)
     while(true){
         bytes = send(fd, "Please input the username:\n", sizeof("Please input the username:\n"), 0);
         bytes = recv(fd, buf, sizeof(buf), 0);
-        cout << "after waiting..." << endl;
+
         if(bytes == -1){
             perror("[Error] recv error\n");
             return (void*) NULL;
@@ -109,7 +130,8 @@ void *start_routine(void *ptr)
     //login待调试
     Kernel::Instance().GetUserManager().Login(username);
 
-    msg.display(homepage(username));
+    stringstream sout = homepage(username);
+    msg.display(sout);
 
     while(true){
         bytes = recv(fd, buf, BUF_SIZE, 0);
@@ -123,7 +145,7 @@ void *start_routine(void *ptr)
         buf[bytes] = '\0';
         if(bytes == 1)continue;
 
-        stringstream sout;
+        sout.str("");
         vector<string> commands = split(buf);
 
         cout << "Receive command: " << string(buf) << endl;
@@ -133,8 +155,18 @@ void *start_routine(void *ptr)
                 msg.display(sout);
                 break;
             }
-            Kernel::Instance().Sys_Mkdir(commands[1]);
-            cout << "Mkdir successfully!" << endl;
+            int code = Kernel::Instance().Sys_Mkdir(commands[1]);
+            if(code == NOERROR){
+                sout << "Mkdir successfully!" << endl;
+            }
+            else if(code == EEXIST){
+                sout << "[Error] " << commands[1] << " has existed!" << endl;
+            }
+            else{
+                sout << "[Error] Unknown error" << endl;
+            }
+
+            msg.display(sout);
         }
         else if(commands[0] == "ls"){
             if(commands.size() != 1){
@@ -146,7 +178,8 @@ void *start_routine(void *ptr)
             User& u = Kernel::Instance().GetUser();
             u.u_error = NOERROR;
             int fd = Kernel::Instance().Sys_OpenDir(u.u_curdir,File::FREAD); 
-            sout <<"Access\tuser\tsize\tdatetime\tname\n";
+            //sout << "Access\tsize\tdatetime\tname\n";
+            sout << std::setw(10) << "Access\t" << "size\t" << "datetime\t\t" << "name" <<endl;
             while(true){
                 char _buf[33] = {0};
                 int code;
@@ -155,13 +188,27 @@ void *start_routine(void *ptr)
                 else{
                     DirectoryEntry* de = (DirectoryEntry*) _buf;
                     if(de->m_ino == 0) continue;
-                    cout << "inumber:" << de->m_ino << endl;
                     Inode *pInode = g_InodeTable.IGet(de->m_ino);
-                    sout << pInode->i_mode << "\t" << pInode->i_uid <<"\t" << pInode->i_size << "\t" 
-                        << pInode->IGetAccessDatetime() << "\t" << de->m_name << endl;
+
+                    //处理文件权限显示
+                    string grant = "";
+                    unsigned i_mode = pInode->i_mode & ~Inode::IALLOC;
+                    grant += i_mode & Inode::IREAD? 'r' : '-';
+                    grant += i_mode & Inode::IWRITE? 'w' : '-';
+                    grant += i_mode & Inode::IEXEC? 'x' : '-';
+                    grant += i_mode & (Inode::IREAD >> 3)? 'r' : '-';
+                    grant += i_mode & (Inode::IWRITE >> 3)? 'w' : '-';
+                    grant += i_mode & (Inode::IEXEC >> 3)? 'x' : '-';
+                    grant += i_mode & (Inode::IREAD >> 6)? 'r' : '-';
+                    grant += i_mode & (Inode::IWRITE >> 6)? 'w' : '-';
+                    grant += i_mode & (Inode::IEXEC >> 6)? 'x' : '-';
+
+                    sout << std::setw(10)<< grant <<"\t" << (pInode->i_mode & Inode::IFDIR? "": to_string(pInode->i_size))  << "\t" 
+                         << getLocalTime(pInode->IGetAccessDatetime()) << "\t" << de->m_name << endl;
                     pInode->NFrele();
                 }
             }
+            u.u_cdir->NFrele();
             msg.display(sout);
             
         }
@@ -175,7 +222,8 @@ void *start_routine(void *ptr)
             Kernel::Instance().Sys_ChDir(desDir);
         }
         else if(commands[0] == "--help"){
-            msg.display(help());
+            sout = help();
+            msg.display(sout);
         }
         else if(commands[0] == "exit"){
             Kernel::Instance().Sys_Exit();
@@ -383,22 +431,44 @@ void *start_routine(void *ptr)
             }
             msg.display(sout);
         }
+        else if(commands[0] == "fin"){
+            if(commands.size() != 3){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            //fin inName outName
+            string inName = commands[1], outName = commands[2];
+            int sum;
+            if((sum = Kernel::Instance().Sys_ReadIn(inName, outName)) == -1){
+                sout << "[Error] Fin! Please checkout the inName and outName." << endl;
+            }
+            else{
+                sout << "Fin successfully for " << sum << " bytes! You can cat the "<< inName <<" to checkout the content." << endl;
+            }
+            msg.display(sout);
+        }
+        else if(commands[0] == "fout"){
+            if(commands.size() != 3){
+                sout << COMMAND_PROMPT << endl;
+                msg.display(sout);
+                break;
+            }
+            //fout inName outName
+            string inName = commands[1], outName = commands[2];
+            int sum;
+            if((sum = Kernel::Instance().Sys_ReadOut(inName, outName)) == -1){
+                sout << "[Error] Fin! Please checkout the inName and outName." << endl;
+            }
+            else{
+                sout << "Fout successfully for " << sum << " bytes! You can open the "<< outName <<" to checkout the content." << endl;
+            }
+            msg.display(sout);
+        }
         else{
             sout << COMMAND_PROMPT << endl;
             msg.display(sout);
             break;
-        }
-
-        FileManager& fileMgr = Kernel::Instance().GetFileManager();
-        char* curPath = fileMgr.GetCurDir();
-        char disPath[100];
-        strcpy(disPath, ((string)"root@" + (curPath + 1)).c_str());
-        strcat(disPath, ":/# ");
-        bytes = send(fd, disPath, strlen(disPath), 0);
-        if(bytes <= 0){
-            cout << "[Info] user " << username << " is disconncted!" << endl;
-            Kernel::Instance().GetUserManager().Logout();
-            return (void*) NULL;
         }
     }
 

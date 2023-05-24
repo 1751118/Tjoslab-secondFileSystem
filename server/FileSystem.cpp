@@ -300,7 +300,7 @@ Buf* FileSystem::Alloc()
 	 */
 	//pthread_mutex_lock(&p_mutex);
 	pthread_mutex_lock(&sb->s_flock);//s_mfree--的写操作需要保护
-	cout << "[Alloc] sb->s_flock上锁" <<endl;
+
 	// while(sb->s_flock)
 	// {
 	// 	/* 进入睡眠直到获得该锁才继续 */
@@ -360,7 +360,7 @@ Buf* FileSystem::Alloc()
 		// sb->s_flock = 0;
 	}
 	pthread_mutex_unlock(&sb->s_flock);
-	cout << "[Alloc] sb->s_flock解锁!" << endl;
+
 	/* 普通情况下成功分配到一空闲磁盘块 */
 	pBuf = this->m_BufferManager->GetBlk(blkno);	/* 为该磁盘块申请缓存 */
 	this->m_BufferManager->ClrBuf(pBuf);	/* 清空缓存中的数据 */

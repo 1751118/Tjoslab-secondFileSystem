@@ -103,18 +103,14 @@ Inode* InodeTable::IGet(int inumber)
 
 	while(true)
 	{
-		cout << "pos4" << endl;
 		/* 检查指定设备dev中编号为inumber的外存Inode是否有内存拷贝 */
 		int index = this->IsLoaded(inumber);
-		cout <<"index:" << index << endl;
 		if(index >= 0)	/* 找到内存拷贝 */
 		{
 			pInode = &(this->m_Inode[index]);
 			/* 如果该内存Inode被上锁 */
 			//printf("[IGET]上锁pInode: index=%d i_number=%d\n",index, pInode->i_number);
-			cout << "pos5" << endl;
 			pthread_mutex_lock(&pInode->mutex);
-			cout << "pos55" << endl;
 			//if( pInode->i_flag & Inode::ILOCK )
 			//{
 				/* 增设IWANT标志，然后睡眠 */
@@ -155,7 +151,6 @@ Inode* InodeTable::IGet(int inumber)
 		}
 		else	/* 没有Inode的内存拷贝，则分配一个空闲内存Inode */
 		{
-			cout << "pos6" << endl;
 			pInode = this->GetFreeInode();
 			/* 若内存Inode表已满，分配空闲Inode失败 */
 			if(NULL == pInode)

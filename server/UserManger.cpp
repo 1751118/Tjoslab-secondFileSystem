@@ -46,19 +46,15 @@ bool UserManager::Login(string username)
 
     user_addr[pid] = i;
     p_users[i]->u_uid = 0;
-    
+
     //创建Usr的初始目录
     //1、关联根目录
-    cout <<"get root begin" << endl;
     p_users[i]->u_cdir = g_InodeTable.IGet(FileSystem::ROOTINO);
-    cout <<"get root end" << endl;
     p_users[i]->u_cdir->NFrele();
     strcpy(p_users[i]->u_curdir, "/");          
 
     //2、创建自己的家目录
-    cout <<"make home begin" << endl;
     Kernel::Instance().Sys_Mkdir(username);
-    cout <<"make home end" << endl;
     p_users[i]->u_error = NOERROR;
 
     //3、转到家目录
@@ -70,13 +66,21 @@ bool UserManager::Login(string username)
     FileManager& fileMgr = Kernel::Instance().GetFileManager();
     fileMgr.ChDir();
 
-    printf("Pthread %lu logins successfully!", pid);
+    printf("User %d logins successfully!", i);
     return true;
 }
 
 bool UserManager::Logout()
 {
-    return false;
+    pthread_t pid = pthread_self();
+    int uid = user_addr[pid];
+
+    user_addr.erase(pid);
+    free(p_users[uid]);
+    p_users[uid] = NULL;
+
+    cout << "User:" << uid << " exit!" << endl;
+    return true;
 }
 
 User *UserManager::GetUser()

@@ -51,7 +51,6 @@ int Kernel::Sys_Mkdir(const string path)
     fileMgr.MkNod();
 
     return u.u_error;
-
 }
 
 int Kernel::Sys_ChDir(const string desDir)
@@ -72,14 +71,13 @@ int Kernel::Sys_ChDir(const string desDir)
 void Kernel::Sys_Exit()
 {
     this->m_BufferManager->Bflush();
-    
     this->m_FileManager->m_InodeTable->UpdateInodeTable();
     this->m_FileSystem->Update();
     this->m_disk->Exit();
 
+    //用户登出
     UserManager& userMgr = Kernel::Instance().GetUserManager();
-    int uid = userMgr.user_addr[pthread_self()];
-    cout << "User:" << uid <<" exit..." << endl;
+    userMgr.Logout();
 }
 
 int Kernel::Sys_Creat(const string fileName)
@@ -206,8 +204,71 @@ int Kernel::sys_Cat(const string fileName, stringstream& sout)
             break;
         sout << buf;
     }
+    sout << endl;
     if(code != NOERROR) return -1;
 
     //关闭文件
     return Kernel::Instance().Sys_Close(fd);
+}
+
+int Kernel::Sys_ReadIn(const string inName, const string outName)
+{
+    int out_fd = open(outName.c_str(), O_RDONLY);
+    if(out_fd == -1) return -1;
+
+    User& u = Kernel::Instance().GetUser();
+    u.u_error = NOERROR;
+
+    int code;
+    if(Sys_Creat(inName) != NOERROR) return -1;
+
+    code = NOERROR;
+    int in_fd = Sys_Open(inName, File::FWRITE, code);
+    if(code != NOERROR) return -1;
+
+    char buf[BUF_SIZE];
+    int size;
+    size_t sum = 0;
+    while(true){
+        memset(buf, 0, BUF_SIZE);
+        if((size = read(out_fd, buf, BUF_SIZE)) <= 0)
+            break;
+        else{
+            sum += Sys_Write(in_fd, size, size, buf, code);
+        }
+    }
+
+    close(out_fd);
+    if(Sys_Close(in_fd) == -1) return -1;
+    return sum;
+}
+
+int Kernel::Sys_ReadOut(const string inName, const string outName)
+{
+    int out_fd = open(outName.c_str(), O_WRONLY | O_CREAT);
+    if(out_fd == -1) return -1;
+
+    User& u = Kernel::Instance().GetUser();
+    u.u_error = NOERROR;
+
+    int code = NOERROR;
+    int in_fd = Sys_Open(inName, File::FREAD, code);
+    if(code != NOERROR) return -1;
+
+    char buf[BUF_SIZE];
+    int size;
+    size_t sum = 0;
+    while(true){
+        memset(buf, 0, BUF_SIZE);
+        if((size = Sys_Read(in_fd, BUF_SIZE, BUF_SIZE, buf, code)) <= 0)
+            break;
+        else{
+            sum += write(out_fd, buf, size);
+        }
+    }
+    if(code != NOERROR) return -1;
+
+    close(out_fd);
+    if(Sys_Close(in_fd) == -1) return -1;
+    return sum;
 }

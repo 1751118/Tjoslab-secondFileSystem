@@ -1,0 +1,25 @@
+# 设置cmake最低版本
+cmake_minimum_required(VERSION 3.10)
+    
+# 设置编译器
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+    
+# 设置项目名
+project(secondFileSystem)
+    
+# 添加可执行目标
+add_executable(secondFileSystem 
+    BufferManaget.cpp 
+    Disk.cpp 
+    File.cpp 
+    FileManager.cpp 
+    FileSystem.cpp
+    INode.cpp
+    Kernel.cpp
+    main.cpp
+    OpenFileManager.cpp
+    SystemCall.cpp
+    User.cpp
+    UserManager.cpp
+    )

@@ -511,7 +511,6 @@ void Inode::NFrele()
 	/* 解锁pipe或Inode,并且唤醒相应进程 */
 	this->i_flag &= ~Inode::ILOCK;
 	pthread_mutex_unlock(&this->mutex);
-	cout << "this:" << this->i_number << "解锁！" << endl;
 }
 
 void Inode::NFlock()

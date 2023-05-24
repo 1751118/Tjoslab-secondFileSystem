@@ -22,52 +22,43 @@ void running(int fd)
     bool first_recv = 0;
 
     while(true){
-        while(true){
-            bytes = recv(fd, recieveMsg, sizeof(recieveMsg), 0);
-            if(bytes == 0){
-                printf("Connect is closed\n");
+        bytes = recv(fd, recieveMsg, sizeof(recieveMsg), 0);
+        if(bytes == 0){
+            printf("Connect is closed\n");
+            return;
+        }
+        if(bytes == -1){
+            if(errno != EAGAIN &&errno != EWOULDBLOCK && errno != EINTR){
+                printf("[Error] Error code is %d(%s)\n", errno, strerror(errno));
                 return;
             }
-            if(bytes == -1){
-                if(errno != EAGAIN &&errno != EWOULDBLOCK && errno != EINTR){
-                    printf("[Error] Error code is %d(%s)\n", errno, strerror(errno));
-                    return;
-                }
-                if(errno == EINTR)
-                    continue;
-                if(!first_recv)
-                    continue;
-            }
-            if(bytes > 0){
-                recieveMsg[bytes] = 0;
-                cout << recieveMsg;
-                if(!first_recv)
-                    first_recv = 1;
-            }
-            break;
+            continue;
+        }
+        if(bytes > 0){
+            recieveMsg[bytes] = 0;
+            cout << recieveMsg;
         }
 
         //获取用户输入
         bool exitFlag = false;
         while(true){
             fgets(sendMsg, sizeof(sendMsg), stdin);
-            int len = strlen(sendMsg) - 1; //去掉最后的换行
-            if(len == 0) break;
+
+            //单个回车不发送
+            int len = strlen(sendMsg) - 1; 
+            if(len == 0) continue;
             
-            if(!strcmp(sendMsg, "exit")){
-                exitFlag = true;
-                break;
+
+            //向服务器发送用户输入
+            if((bytes = send(fd, sendMsg, len, 0)) == -1){
+                printf("[EROOR] send error\n");
+                return;
             }
-            else{
-                //向服务器发送用户输入
-                if((bytes = send(fd, sendMsg, len, 0)) == -1){
-                    printf("[EROOR] send error\n");
-                    return;
-                }
-                break;
-            }
+
+            if(!strcmp(sendMsg, "exit\n")) return;
+            
+            break;
         }
-        if(exitFlag) break;
     }
 }
 int main(int argc, char** argv)
@@ -79,8 +70,8 @@ int main(int argc, char** argv)
     char* ipaddr = argv[1];
     unsigned port = atoi(argv[2]);
 
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(fd < 0){
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(sockfd < 0){
         fprintf(stderr, "[Error]Failed to create socket:%s\n", strerror(errno));
         return -1;
     }
@@ -100,18 +91,19 @@ int main(int argc, char** argv)
         方便实现超时处理，以避免无限期等待套接字操作完成。
     */
 
-   //这里暂时使用默认的阻塞模式
-    int flag = fcntl(fd, F_GETFL, 0);
-    if(flag < 0){
+   //这里使用非阻塞模式
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    if(flags < 0){
         fprintf(stderr, "Set flags error:%s\n", strerror(errno));
-        close(fd);
+        close(sockfd);
         return -1;
     }
 
     //建立连接
     int cnt = 1;
     while(true){
-        int rc = connect(fd, (sockaddr*)&addr, sizeof addr);
+        int rc = connect(sockfd, (sockaddr*)&addr, sizeof addr);
         if(rc == 0){
             printf("Successfully connect to the server\n");
             break;
@@ -122,8 +114,8 @@ int main(int argc, char** argv)
         }
         printf("[Error] Try reconnecting the server for the %d time\n", cnt++);
     }
-    running(fd);
-    close(fd);
+    running(sockfd);
+    close(sockfd);
     printf("Connect closed!\n");
     return 0;
 }

@@ -6,6 +6,7 @@
 using namespace std;
 
 #define NOERROR 0
+
 typedef int ErrorCode;
 
 class UserManager

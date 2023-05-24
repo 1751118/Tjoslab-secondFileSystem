@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "BufferManager.h"
 #include "FileManager.h"
 #include "Disk.h"
@@ -53,7 +57,6 @@ public:
     UserManager& GetUserManager();
     FileSystem& GetFileSystem();
     
-
 public:
     static Kernel& Instance();
     void Initialize();
@@ -72,6 +75,8 @@ public:
     int Sys_Seek(int fd, off_t offset, int whence, int& code);
     int Sys_Close(int fd);
     int sys_Cat(const string fileName, stringstream& sout);
+    int Sys_ReadIn(const string inName, const string outName);
+    int Sys_ReadOut(const string inName, const string outName);
 };
 
 class Message
@@ -84,8 +89,17 @@ public:
         this->fd = fd;
         this->username = username;
     }
-    void display(const stringstream& ss){
+    void display(stringstream& ss){
+
+        //每次显示信息之后，都显示当前路径
+        FileManager& fileMgr = Kernel::Instance().GetFileManager();
+        char disPath[100];
+        strcpy(disPath, ((string)"root@" + (fileMgr.GetCurDir() + 1)).c_str());
+        ss << strcat(disPath, ":/# ");
+        
         int bytes = send(fd, ss.str().c_str(), ss.str().size(), 0);
         cout << "Send " << username << "[" << fd << "] " << bytes << " bytes" << endl;
+
+        
     }
 };

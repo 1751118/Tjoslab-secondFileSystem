@@ -256,6 +256,8 @@ void Disk::Exit()
         close(this->img_fd);
         exit(-1);
     }
+
+    //数据同步回磁盘
     char* p = this->m_BufferManager->GetMMapAddr();
     if(msync((void*)p, st.st_size, MS_ASYNC) == -1){
         perror("msync");

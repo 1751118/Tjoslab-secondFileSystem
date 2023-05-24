@@ -107,9 +107,8 @@ Buf* BufferManager::Bread(int blkno)
 {
 	Buf* bp;
 	/* 根据设备号，字符块号申请缓存 */
-	cout << "来拿缓存块" << blkno << endl;
 	bp = this->GetBlk(blkno);
-	cout << "缓存块" << blkno << "拿到了" <<endl;
+
 	/* 如果在设备队列中找到所需缓存，即B_DONE已设置，就不需进行I/O操作 */
 	
 	if(bp->b_flags & Buf::B_DONE)
