@@ -219,7 +219,10 @@ void *start_routine(void *ptr)
                 break;
             }
             string desDir = commands[1];
-            Kernel::Instance().Sys_ChDir(desDir);
+            if(Kernel::Instance().Sys_ChDir(desDir) == ENOENT){
+                sout << "[Error] No such directory!" << endl;
+            }
+            msg.display(sout);
         }
         else if(commands[0] == "--help"){
             sout = help();
@@ -410,7 +413,7 @@ void *start_routine(void *ptr)
                 msg.display(sout);
                 break;
             }
-            int fd = stoi(commands[1]), code;
+            int fd = stoi(commands[1]);
             if(Kernel::Instance().Sys_Close(fd) == 0){
                 sout << "Close fd:" << fd << endl;
             }
@@ -481,8 +484,8 @@ int main()
     //信号处理
     struct sigaction action;
     action.sa_handler = handle_pipe;
-    sigemptyset(&action.sa_mask);       //初始化信号集为空
-    action.sa_flags = 0;                //指定信号处理的行为选项
+    sigemptyset(&action.sa_mask);       //初始化信号集为空，不屏蔽任何信号
+    action.sa_flags = 0;                //指定信号处理的行为选项，表示不使用任何特殊的信号处理行为选项。
     if(sigaction(SIGPIPE, &action, NULL) == -1){
         perror("[Error]sigaction failed.");
         return 1;
@@ -506,13 +509,13 @@ int main()
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt);
     bzero(&server, sizeof server);
     server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
+    server.sin_port = htons(PORT);          //设置端口号为8888
 
     //INADDR_ANY 是一个特殊的常量，用于表示服务器绑定的 IP 地址。它是一个预定义的常量，其值为 0.0.0.0。
     //在网络编程中，当服务器希望监听所有可用的网络接口时，可以将服务器的 IP 地址设置为 INADDR_ANY。这样，服务器将能够接受来自任何网络接口的连接请求。
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    //绑定
+    //绑定服务器的sockaddr_in与监听的listenfd
     if(bind(listenfd,(sockaddr*)&server, sizeof(sockaddr)) == -1){
         perror("[Error] Bind error!\n");
         exit(1);
@@ -543,6 +546,7 @@ int main()
 
         //start_routine 将在新的线程中执行，第四个参数为传递给start_routine的参数
         pthread_create(&thread, NULL, start_routine, (void*)&connectfd);
+        
     }
 
     close(listenfd);

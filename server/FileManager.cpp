@@ -845,6 +845,7 @@ void FileManager::ChDir()
 	if (NULL == pInode)
 	{
 		cout << "No such directory!" << endl;
+		u.u_error = ENOENT;
 		return;
 	}
 	/* 搜索到的文件不是目录文件 */
@@ -866,6 +867,7 @@ void FileManager::ChDir()
 	u.u_cdir = pInode;
 	pInode->NFrele();
 
+	cout << "setCurDir:" << (char *)u.u_arg[0] << endl;
 	this->SetCurDir((char *)u.u_arg[0]);
 }
 

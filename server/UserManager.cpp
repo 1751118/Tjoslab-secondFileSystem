@@ -23,7 +23,6 @@ UserManager::~UserManager()
 
 bool UserManager::Login(string username)
 {
-    //TODO
     pthread_t pid = pthread_self();
     if(user_addr.find(pid) != user_addr.end()){
         printf("[Error] pthread %lu repeat logins!\n", pid);

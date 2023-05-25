@@ -46,8 +46,6 @@ private:
     void InitFileSystem();
     void InitUser();
     
-    
-
 public:
     Kernel(){}
     ~Kernel(){}

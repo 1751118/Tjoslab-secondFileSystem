@@ -59,13 +59,14 @@ int Kernel::Sys_ChDir(const string desDir)
     strcpy(desPath, desDir.c_str());
 
     User& u = Kernel::Instance().GetUser();
+    u.u_error = NOERROR;
     u.u_dirp = desPath;
     u.u_arg[0] = (unsigned long long) desPath;
 
     FileManager& fileMgr = Kernel::Instance().GetFileManager();
     fileMgr.ChDir();
 
-    return u.u_ar0[User::EAX];
+    return u.u_error;
 }
 
 void Kernel::Sys_Exit()
@@ -184,9 +185,7 @@ int Kernel::sys_Cat(const string fileName, stringstream& sout)
 {
     User& u = Kernel::Instance().GetUser();
     u.u_error = NOERROR;
-
-    FileManager& fileMgr = Kernel::Instance().GetFileManager();
-
+    
     int code;
 
     //读打开文件
@@ -245,7 +244,7 @@ int Kernel::Sys_ReadIn(const string inName, const string outName)
 
 int Kernel::Sys_ReadOut(const string inName, const string outName)
 {
-    int out_fd = open(outName.c_str(), O_WRONLY | O_CREAT);
+    int out_fd = open(outName.c_str(), O_WRONLY | O_CREAT, 0755);
     if(out_fd == -1) return -1;
 
     User& u = Kernel::Instance().GetUser();

@@ -61,7 +61,14 @@ void Kernel::Initialize()
     //解锁
     pthread_mutex_unlock(&usr.u_cdir->mutex);
     //设置路径
-    strcpy(usr.u_curdir,"/");       //这里是主线程的usr，貌似并没有什么用
+    strcpy(usr.u_curdir,"/");
+
+    //初始化根目录结构
+    Sys_ChDir(usr.u_curdir);
+    Sys_Mkdir("bin");
+    Sys_Mkdir("etc");
+    Sys_Mkdir("dev");
+    
 
     printf("[Info] System initializing successfully!\n");
 }

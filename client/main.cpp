@@ -70,6 +70,7 @@ int main(int argc, char** argv)
     char* ipaddr = argv[1];
     unsigned port = atoi(argv[2]);
 
+    //1、创建套接字
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd < 0){
         fprintf(stderr, "[Error]Failed to create socket:%s\n", strerror(errno));
@@ -100,7 +101,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    //建立连接
+    //2、建立连接
     int cnt = 1;
     while(true){
         int rc = connect(sockfd, (sockaddr*)&addr, sizeof addr);
@@ -114,6 +115,7 @@ int main(int argc, char** argv)
         }
         printf("[Error] Try reconnecting the server for the %d time\n", cnt++);
     }
+    //3、执行收发逻辑
     running(sockfd);
     close(sockfd);
     printf("Connect closed!\n");
