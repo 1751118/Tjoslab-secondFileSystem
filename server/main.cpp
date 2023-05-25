@@ -153,7 +153,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 2) {
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int code = Kernel::Instance().Sys_Mkdir(commands[1]);
             if(code == NOERROR){
@@ -172,7 +172,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 1){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             //待调试
             User& u = Kernel::Instance().GetUser();
@@ -216,7 +216,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 2){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             string desDir = commands[1];
             if(Kernel::Instance().Sys_ChDir(desDir) == ENOENT){
@@ -236,7 +236,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 2){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int code = Kernel::Instance().Sys_Creat(commands[1]);
             if(code == EEXIST){
@@ -260,7 +260,7 @@ void *start_routine(void *ptr)
              if(commands.size() != 2){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int code = Kernel::Instance().Sys_Remove(commands[1]);
             if(code == ENOENT){
@@ -281,13 +281,13 @@ void *start_routine(void *ptr)
             if(commands.size() != 3){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             string fileName = commands[1];
             if(!isNum(commands[2])){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int mode = stoi(commands[2]);
             int code;
@@ -310,12 +310,12 @@ void *start_routine(void *ptr)
             if(commands.size() != 3){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             if(!isNum(commands[1]) || !isNum(commands[2])){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int fd = stoi(commands[1]), length = stoi(commands[2]), code;
             char _buf[BUF_SIZE];
@@ -340,12 +340,12 @@ void *start_routine(void *ptr)
             if(commands.size() < 3){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             if(!isNum(commands[1])){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int fd = stoi(commands[1]), code;
 
@@ -376,12 +376,12 @@ void *start_routine(void *ptr)
             if(commands.size() != 4){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             if(!isNum(commands[1]) || !isNum(commands[2]) || !isNum(commands[3])){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int fd = stoi(commands[1]);
             off_t offset = stoi(commands[2]);
@@ -406,12 +406,12 @@ void *start_routine(void *ptr)
             if(commands.size() != 2){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             if(!isNum(commands[1])){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             int fd = stoi(commands[1]);
             if(Kernel::Instance().Sys_Close(fd) == 0){
@@ -426,7 +426,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 2){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             string fileName = commands[1];
             if(Kernel::Instance().sys_Cat(fileName, sout) == -1){
@@ -438,7 +438,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 3){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             //fin inName outName
             string inName = commands[1], outName = commands[2];
@@ -455,7 +455,7 @@ void *start_routine(void *ptr)
             if(commands.size() != 3){
                 sout << COMMAND_PROMPT << endl;
                 msg.display(sout);
-                break;
+                continue;
             }
             //fout inName outName
             string inName = commands[1], outName = commands[2];
@@ -471,7 +471,6 @@ void *start_routine(void *ptr)
         else{
             sout << COMMAND_PROMPT << endl;
             msg.display(sout);
-            break;
         }
     }
 

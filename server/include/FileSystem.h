@@ -60,8 +60,8 @@ public:
 	static const int INODE_ZONE_SIZE = 27 - 2;		/* 磁盘上外存Inode区占据的扇区数 */
 
 	static const int DATA_ZONE_START_SECTOR = 27;		/* 数据区的起始扇区号 */
-	static const int DATA_ZONE_END_SECTOR = 3000 - 1;	/* 数据区的结束扇区号 */
-	static const int DATA_ZONE_SIZE = 3000 - DATA_ZONE_START_SECTOR;	/* 数据区占据的扇区数量 */
+	static const int DATA_ZONE_END_SECTOR = 10000 - 1;	/* 数据区的结束扇区号 */
+	static const int DATA_ZONE_SIZE = 10000 - DATA_ZONE_START_SECTOR;	/* 数据区占据的扇区数量 */
 
 	/* Functions */
 public:

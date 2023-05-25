@@ -257,6 +257,8 @@ void InodeTable::UpdateInodeTable()
 			/* 对内存Inode解锁 */
 			this->m_Inode[i].NFrele();
 		}
+		// /*释放所有缓存*/
+		// this->m_Inode[i].NFrele();
 	}
 }
 
